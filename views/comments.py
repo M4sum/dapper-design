@@ -11,7 +11,7 @@ class CommentListEndpoint(Resource):
             item.to_dict() for item in queryset
         ]
         return serialized_list
-    
+     
     def get(self):
         keyword = request.args.get('keyword')
         if keyword:
