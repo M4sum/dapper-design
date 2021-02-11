@@ -1,12 +1,13 @@
 
 let activePost;
+let activeComment;
+let newComment = JSON.parse('{ "comment":"", "author":"Masum"}');
 
 // gets post from the server:
 const getPost = () => {
     // get post id from url address:
     const url = window.location.href;
     id = url.substring(url.lastIndexOf('#') + 1);
-
     // fetch post:
     fetch('/api/posts/' + id + '/')
         .then(response => response.json())
@@ -14,6 +15,25 @@ const getPost = () => {
             console.log(data);
             activePost = data;
             renderPost();
+        });
+};
+
+// gets comments from the server:
+const getComment = () => {
+    // get comment id from url address:
+    // No comment id in url address //
+    const url = window.location.href;
+    id = url.substring(url.lastIndexOf('#') + 1);
+
+    console.log(id);
+    console.log("HI");
+    // fetch post:
+    fetch('/api/comments/#' + id + '/')
+        .then(response => response.json())
+        .then(data => {
+            // console.log(data);
+            activeComment = data;
+            renderComment();
         });
 };
 
@@ -43,12 +63,37 @@ const updatePost = (ev) => {
     ev.preventDefault();
 };
 
+// add new comment:
+const createComment = (ev) => {
+    const url = window.location.href;
+    id = url.substring(url.lastIndexOf('#') + 1);
+    const data = {
+        comment: document.querySelector('#content').value,
+        author: "Masum",
+        post_id: id
+    };
+    console.log(data);
+    fetch('/api/comments/', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(getComment())
+        .then(showConfirmation);
+    
+    // this line overrides the default form functionality:
+    ev.preventDefault();
+};
+
 const deletePost = (ev) => {
-    const doIt = confirm('Are you sure you want to delete this blog post?');
+    const doIt = confirm('Are you sure you want to delete this blog comment?');
     if (!doIt) {
         return;
     }
-    fetch('/api/posts/' + activePost.id + '/', { 
+    fetch('/api/comments/' + activePost.id + '/', { 
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
@@ -63,6 +108,16 @@ const deletePost = (ev) => {
     ev.preventDefault()
 };
 
+const deleteComment = (comment_id) => {
+    if (confirm("Are you sure you want to delete this comment?")) {
+      fetch('/api/comments/' + comment_id + '/', {
+        method: 'DELETE'
+      }).then(response => {
+        getComment();
+      })
+    }
+  }
+
 // creates the HTML to display the post:
 const renderPost = (ev) => {
     const paragraphs = '<p>' + activePost.content.split('\n').join('</p><p>') + '</p>';
@@ -76,6 +131,41 @@ const renderPost = (ev) => {
         </p>
     `;
     document.querySelector('.post').innerHTML = template;
+    toggleVisibility('view');
+
+    // prevent built-in form submission:
+    if (ev) { ev.preventDefault(); }
+};
+
+// creates the HTML to display the comment:
+const renderComment = (ev) => {
+    // var inputs = '';
+    // for (var i = 0; i < activeComment.length; i++) {
+    //     inputs += '<div class="content"><p>' + activeComment[i].comment.split('\n').join('</p><p>') + '</p></div>';
+    //     inputs += '<p><strong>Author: </strong>' + activeComment[i].author + '</p>';
+    //     inputs += '<i class="btn fas fa-trash-alt" style="float: right;" onClick="deleteComment(${activeComment[i].id})"></i>';
+    // }
+    // // const paragraphs = '<p>' + activeComment[0].comment.split('\n').join('</p><p>') + '</p>';
+    // const template = `
+    //     <p id="confirmation" class="hide"></p>
+    //     <h1>Comments</h1>
+    //     ${inputs}
+    // `;
+
+    comment_elements = activeComment.map((comment) => {
+        const paragraphs = '<p>' + comment.comment.split('\n').join('</p><p>') + '</p>';
+        const template = `
+            <div>
+                <strong>Comment by: </strong>${comment.author}
+                <i class="btn fas fa-trash-alt" style="float: right;" onClick="deleteComment('${comment.id}');"></i>
+            </div>
+            <div class="content">${paragraphs}</div>
+            <hr>
+        `;
+        return template
+      });
+
+    document.querySelector('.comments').innerHTML = comment_elements.join('\n');
     toggleVisibility('view');
 
     // prevent built-in form submission:
@@ -108,6 +198,24 @@ const renderForm = () => {
     toggleVisibility('edit');
 };
 
+// creates the HTML to display add comment box:
+const renderFormComment = () => {
+    const htmlSnippet = `
+        <div class="input-section">
+            <label for="content">Content</label>
+            <textarea name="content" id="content">${newComment.comment}</textarea>
+        </div>
+        <button class="btn btn-main" id="save-comment" type="submit">Save</button>
+        <button class="btn" id="cancel-comment" type="submit">Cancel</button>
+    `;
+
+    // after you've updated the DOM, add the event handlers:
+    document.querySelector('#comment-form').innerHTML = htmlSnippet;
+    document.querySelector('#save-comment').onclick = createComment;
+    document.querySelector('#cancel-comment').onclick = renderComment;
+    toggleVisibility('edit-comment');
+};
+
 const formatDate = (date) => {
     const options = { 
         weekday: 'long', year: 'numeric', 
@@ -122,10 +230,17 @@ const toggleVisibility = (mode) => {
         document.querySelector('#view-post').classList.remove('hide');
         document.querySelector('#menu').classList.remove('hide');
         document.querySelector('#post-form').classList.add('hide');
+        document.querySelector('#comment-form').classList.add('hide');
+        document.querySelector('#add-comment-button').classList.remove('hide');
+
+    } else if (mode === 'edit-comment') {
+        document.querySelector('#comment-form').classList.remove('hide');
+        document.querySelector('#add-comment-button').classList.add('hide');
     } else {
         document.querySelector('#view-post').classList.add('hide');
         document.querySelector('#menu').classList.add('hide');
         document.querySelector('#post-form').classList.remove('hide');
+        document.querySelector('#comment-form').classList.add('hide');
     }
 };
 
@@ -138,9 +253,11 @@ const showConfirmation = () => {
 const initializePage = () => {
     // get the post from the server:
     getPost();
-    // add button event handler (right-hand corner:
+    getComment();
+    // add button event handler (right-hand corner):
     document.querySelector('#edit-button').onclick = renderForm;
     document.querySelector('#delete-button').onclick = deletePost;
+    document.querySelector('#add-comment-button').onclick = renderFormComment;
 };
 
 initializePage();
