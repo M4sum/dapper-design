@@ -11,19 +11,14 @@ class CommentListEndpoint(Resource):
             item.to_dict() for item in queryset
         ]
         return serialized_list
-     
+
     def get(self):
-        keyword = request.args.get('keyword')
-        if keyword:
+        post_id = request.args.get('post_id')
+        if post_id:
             # find data where *any of the fields contain the term...
-            data = models.Comment.objects.filter(
-                Q(content__icontains=keyword) | 
-                Q(author__icontains=keyword) |
-                Q(post_id_icontains=keyword)
-            )
+            data = models.Comment.objects(post_id=post_id)
         else:
             data = models.Comment.objects
-
         # formatting the output JSON
         data = self.queryset_to_serialized_list(data)
         return Response(json.dumps(data), mimetype="application/json", status=200)

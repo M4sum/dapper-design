@@ -20,18 +20,13 @@ const getPost = () => {
 
 // gets comments from the server:
 const getComment = () => {
-    // get comment id from url address:
-    // No comment id in url address //
+    // get post id from url address:
     const url = window.location.href;
     id = url.substring(url.lastIndexOf('#') + 1);
-
-    console.log(id);
-    console.log("HI");
-    // fetch post:
-    fetch('/api/comments/#' + id + '/')
+    // fetch comments:
+  fetch('/api/comments?post_id=' + id)
         .then(response => response.json())
         .then(data => {
-            // console.log(data);
             activeComment = data;
             renderComment();
         });
@@ -139,18 +134,7 @@ const renderPost = (ev) => {
 
 // creates the HTML to display the comment:
 const renderComment = (ev) => {
-    // var inputs = '';
-    // for (var i = 0; i < activeComment.length; i++) {
-    //     inputs += '<div class="content"><p>' + activeComment[i].comment.split('\n').join('</p><p>') + '</p></div>';
-    //     inputs += '<p><strong>Author: </strong>' + activeComment[i].author + '</p>';
-    //     inputs += '<i class="btn fas fa-trash-alt" style="float: right;" onClick="deleteComment(${activeComment[i].id})"></i>';
-    // }
-    // // const paragraphs = '<p>' + activeComment[0].comment.split('\n').join('</p><p>') + '</p>';
-    // const template = `
-    //     <p id="confirmation" class="hide"></p>
-    //     <h1>Comments</h1>
-    //     ${inputs}
-    // `;
+
 
     comment_elements = activeComment.map((comment) => {
         const paragraphs = '<p>' + comment.comment.split('\n').join('</p><p>') + '</p>';
