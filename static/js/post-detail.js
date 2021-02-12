@@ -77,6 +77,7 @@ const createComment = (ev) => {
         })
         .then(response => response.json())
         .then(getComment())
+        .then(toggleVisibility('new-comment'))
         .then(showConfirmation);
     
     // this line overrides the default form functionality:
@@ -135,7 +136,6 @@ const renderPost = (ev) => {
 // creates the HTML to display the comment:
 const renderComment = (ev) => {
 
-
     comment_elements = activeComment.map((comment) => {
         const paragraphs = '<p>' + comment.comment.split('\n').join('</p><p>') + '</p>';
         const template = `
@@ -150,7 +150,11 @@ const renderComment = (ev) => {
       });
 
     document.querySelector('.comments').innerHTML = comment_elements.join('\n');
-    toggleVisibility('view');
+    if (activeComment.length === 0) {
+        toggleVisibility('no-comment')
+    } else {
+        toggleVisibility('view');
+    }
 
     // prevent built-in form submission:
     if (ev) { ev.preventDefault(); }
@@ -216,7 +220,11 @@ const toggleVisibility = (mode) => {
         document.querySelector('#post-form').classList.add('hide');
         document.querySelector('#comment-form').classList.add('hide');
         document.querySelector('#add-comment-button').classList.remove('hide');
-
+    }
+    else if (mode === "no-comment") {
+        document.querySelector('#no-comments').classList.remove('hide');
+    }else if(mode === "new-comment") {
+        document.querySelector('#no-comments').classList.add('hide');
     } else if (mode === 'edit-comment') {
         document.querySelector('#comment-form').classList.remove('hide');
         document.querySelector('#add-comment-button').classList.add('hide');
